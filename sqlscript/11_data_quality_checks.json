@@ -1,0 +1,17 @@
+{
+	"name": "11_data_quality_checks",
+	"properties": {
+		"content": {
+			"query": "USE NYC_TAXI_DISCOVERY;\n\nSELECT\n    min(total_amount) as min_total_amount,\n    max(total_amount) as min_total_amount,\n    avg(total_amount) as min_total_amount,\n    count(*) as total_nubeer_of_records,\n    count(*) as not_null_total_nubeer_of_records\nFROM\n    OPENROWSET(\n        BULK 'trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'parquet',\n        DATA_SOURCE = 'nyc_taxi_data_raw'\n    ) AS trip_data\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'parquet',\n        DATA_SOURCE = 'nyc_taxi_data_raw'\n    ) AS trip_data\n    where total_amount < 0;\n    \n----\n\nSELECT payment_type,description\n    FROM OPENROWSET(\n        BULK 'payment_type.json',\n        DATA_SOURCE = 'nyc_taxi_data_raw',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '1.0',\n        FIELDQUOTE = '0x0b',        \n        FIELDTERMINATOR = '0x0b',\n        ROWTERMINATOR = '0x0a'\n    )\n    WITH\n    (\n        jsonDoc NVARCHAR(MAX)\n    ) AS PAYMENT_TYPE\n    CROSS APPLY OPENJSON(jsonDoc)\n    WITH\n    (\n        payment_type SMALLINT,\n        description VARCHAR(20) '$.payment_type_desc'\n    );\n\n-------\n\nSELECT\n    payment_type,\n    count(*) as record_count\nFROM\n    OPENROWSET(\n        BULK 'trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'parquet',\n        DATA_SOURCE = 'nyc_taxi_data_raw'\n    ) AS trip_data\n    where total_amount < 0\n    group by payment_type\n    order by payment_type;\n\n\nSELECT\n    TOP 10000000 *\nFROM\n    OPENROWSET(\n        BULK 'trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'parquet',\n        DATA_SOURCE = 'nyc_taxi_data_raw'\n    ) AS trip_data\n    ---where total_amount < 0\n\n\n\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
